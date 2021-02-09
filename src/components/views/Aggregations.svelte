@@ -66,6 +66,10 @@
   import('svelte-chartjs/src/Pie.svelte').then(module => {
     Pie = module.default;
   });
+  let RadarChartjs;
+  import('svelte-chartjs/src/Radar.svelte').then(module => {
+    RadarChartjs = module.default;
+  });
   import {
     searchInput,
     triggerAggregations,
@@ -103,16 +107,23 @@
 
   const templateData = (view) => {
     const data = (params[view] && (params[view].dataCB)) ? params[view].dataCB(rawData[params[view].dataRef]) : rawData[params[view].dataRef];
+    if (view === 'polarRadarChartjs') {
+      console.log(view, data);
+    }
     return {
-      labels: data.map(d => d.data),
+      labels: params[view].type === RadarChartjs ? data.labels : data.map(d => d.data),
       datasets: Object.keys(datasets)
       .map(id => {
-        const datasetData = params[view].type === Pie ? data.filter(d => d.data).map(d => d.count || d.mean) : data.filter(d => d.data).map(d => {
-          return {
-            x: d.data,
-            y: d.count || d.mean
-          };
-        })
+        const datasetData = params[view].type === Pie 
+          ? data.filter(d => d.data).map(d => d.count || d.mean) 
+          : params[view].type === RadarChartjs 
+            ? data.data
+            : data.filter(d => d.data).map(d => {
+            return {
+              x: d.data,
+              y: d.count || d.mean
+            };
+          })
         return {
           backgroundColor: params[view].type === Pie ? data.map((_, ind) => colors[ind]) : datasets[id].color,
           borderColor: 'rgba(255,255,255,0)',
@@ -226,6 +237,33 @@
       dataCB: (data) => data.map(x => {
           return {data: x["key_as_string"], count: +x.doc_count}
         })
+    },
+    'polarRadarChartjs': {
+      title: 'Mois de décès',
+      type: RadarChartjs,
+      dataRef: 'deathDate',
+      dataCB: (data) => {
+        return {labels: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"],
+          data: Object.entries(
+            data.reduce((total, s) => {
+              const [ , year, month] = s.key_as_string.match(/(\d{4})(\d{2})\d{2}/)
+              if (year in total) {
+                if (month in total[year]) {
+                  total[year][month] += +s.doc_count
+                } else {
+                  total[year][month] = +s.doc_count
+                }
+              } else {
+                total[year] = {}
+                total[year][month] = +s.doc_count
+              }
+              return total
+            }, {})
+          ).map(([k, val]) => {
+            return Object.values(val)
+          })
+        }
+      }
     },
     'deathAge': {
       title: 'Âge au décès',
