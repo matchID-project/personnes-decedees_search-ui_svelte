@@ -107,34 +107,47 @@
 
   const templateData = (view) => {
     const data = (params[view] && (params[view].dataCB)) ? params[view].dataCB(rawData[params[view].dataRef]) : rawData[params[view].dataRef];
-    if (view === 'polarRadarChartjs') {
-      console.log(view, data);
-    }
-    return {
-      labels: params[view].type === RadarChartjs ? data.labels : data.map(d => d.data),
-      datasets: Object.keys(datasets)
-      .map(id => {
-        const datasetData = params[view].type === Pie 
-          ? data.filter(d => d.data).map(d => d.count || d.mean) 
-          : params[view].type === RadarChartjs 
-            ? data.data
+    if (params[view].type === RadarChartjs) {
+      return {
+        labels: data.labels,
+        datasets: data.datasets.map((yearDataset, ind) => {
+          const datasetData = yearDataset.filter(d => d.x).map(d => d.y) 
+          return {
+            backgroundColor: colors[ind%4],
+            borderColor: 'rgba(255,255,255,0)',
+            borderWidth: 2,
+            pointRadius: 0,
+            label:  yearDataset[0].year,
+            // yAxisID: id,
+            data: datasetData
+          };
+        })
+      };
+    } else {
+      return {
+        labels: params[view].type === RadarChartjs ? data.labels : data.map(d => d.data),
+        datasets: Object.keys(datasets)
+        .map(id => {
+          const datasetData = params[view].type === Pie 
+            ? data.filter(d => d.data).map(d => d.count || d.mean) 
             : data.filter(d => d.data).map(d => {
-            return {
-              x: d.data,
-              y: d.count || d.mean
-            };
-          })
-        return {
-          backgroundColor: params[view].type === Pie ? data.map((_, ind) => colors[ind]) : datasets[id].color,
-          borderColor: 'rgba(255,255,255,0)',
-          borderWidth: 2,
-          pointRadius: 0,
-          label:  labels[id] || id,
-          yAxisID: id,
-          data: datasetData
-        };
-      })
-    };
+              return {
+                x: d.data,
+                y: d.count || d.mean
+              };
+            })
+          return {
+            backgroundColor: params[view].type === Pie ? data.map((_, ind) => colors[ind]) : datasets[id].color,
+            borderColor: 'rgba(255,255,255,0)',
+            borderWidth: 2,
+            pointRadius: 0,
+            label:  labels[id] || id,
+            yAxisID: id,
+            data: datasetData
+          };
+        })
+      };
+    }
   };
 
   let rawData = {};
@@ -242,10 +255,18 @@
       title: 'Mois de décès',
       type: RadarChartjs,
       dataRef: 'deathDate',
+      scales: {},
+      xAxes: [{
+        ticks: {
+          autoSkip: true,
+          fontFamily : fontFamily,
+        },
+        gridLines: {
+          display: false
+        },
+      }],
       dataCB: (data) => {
-        return {labels: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"],
-          data: Object.entries(
-            data.reduce((total, s) => {
+        const reducedData = data.reduce((total, s) => {
               const [ , year, month] = s.key_as_string.match(/(\d{4})(\d{2})\d{2}/)
               if (year in total) {
                 if (month in total[year]) {
@@ -259,8 +280,14 @@
               }
               return total
             }, {})
+        return {
+          labels: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"],
+          datasets: Object.entries(
+            reducedData
           ).map(([k, val]) => {
-            return Object.values(val)
+            return Object.entries(val).map(([monthKey,monthVal]) => {
+              return {x: monthKey, y: monthVal, year: k}
+            })
           })
         }
       }
