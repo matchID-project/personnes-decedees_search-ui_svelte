@@ -113,10 +113,11 @@
         datasets: data.datasets.map((yearDataset, ind) => {
           const datasetData = yearDataset.filter(d => d.x).map(d => d.y) 
           return {
-            backgroundColor: colors[ind%4],
-            borderColor: 'rgba(255,255,255,0)',
-            borderWidth: 2,
+            //backgroundColor: colors[ind%4],
+            borderColor: colors[ind%4],
+            borderWidth: 1,
             pointRadius: 0,
+            fill: false,
             label:  yearDataset[0].year,
             // yAxisID: id,
             data: datasetData
@@ -260,10 +261,14 @@
         ticks: {
           autoSkip: true,
           fontFamily : fontFamily,
+          callback: (x) => {
+            return months[x] || x
+          },
         },
         gridLines: {
           display: false
         },
+        // id: 'axisRadarChartjs',
       }],
       dataCB: (data) => {
         const reducedData = data.reduce((total, s) => {
