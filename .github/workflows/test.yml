@@ -13,6 +13,9 @@ jobs:
       - run: ls `date +%Y`S* | tail -n 1 | xargs cat
       - run: |
           APPARIEMENTS=$(ls `date +%Y`S* | tail -n 1 | xargs cat | jq '[.[keys[] | select(contains("api: search/csv GET"))]] | .[0] | .requests.data | .[0] | .bytes.count' | awk ' {print $1/400}')
-          make -C tools slack-notification SLACK_MESSAGE="nombre d\'appariements cette semaine: ${APPARIEMENTS}" SLACK_TITLE="Stats - deces.matchid.io" SLACK_WEBHOOK="$SLACK_WEBHOOK"
+          echo ${APPARIEMENTS}
+      - run: |
+          APPARIEMENTS=$(ls `date +%Y`S* | tail -n 1 | xargs cat | jq '[.[keys[] | select(contains("api: search/csv GET"))]] | .[0] | .requests.data | .[0] | .bytes.count' | awk ' {print $1/400}')
+          make -C tools slack-notification SLACK_MSG="nombre appariements cette semaine ${APPARIEMENTS}" SLACK_TITLE="Stats - deces.matchid.io" SLACK_WEBHOOK="$SLACK_WEBHOOK"
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
