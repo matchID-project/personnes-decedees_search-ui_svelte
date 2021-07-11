@@ -10,7 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - run: make config
-      - run: curl -O https://deces.matchid.io/stats/2021S25.json
       - run: ls `date +%Y`S* | tail -n 1 | xargs cat
       - run: |
           APPARIEMENTS=$(ls `date +%Y`S* | tail -n 1 | xargs cat | jq '[.[keys[] | select(contains("api: search/csv GET"))]] | .[0] | .requests.data | .[0] | .bytes.count' | awk ' {print $1/400}')
